@@ -9,6 +9,7 @@ import net.dv8tion.jda.core.JDA;
 import net.dv8tion.jda.core.JDABuilder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.togetherjava.discord.server.java.execution.JavaCodeRunner;
 
 public class JShellBot {
 
@@ -34,7 +35,7 @@ public class JShellBot {
 
     JDA jda = new JDABuilder(AccountType.BOT)
         .setToken(config.getString("token"))
-        .addEventListener(new CommandHandler(config))
+        .addEventListener(new CommandHandler(config, new JavaCodeRunner(config)))
         .build();
     jda.awaitReady();
 

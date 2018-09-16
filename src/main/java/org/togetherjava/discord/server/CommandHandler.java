@@ -4,19 +4,15 @@ import java.time.Duration;
 import java.util.concurrent.TimeUnit;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-import jdk.jshell.Diag;
-import jdk.jshell.Snippet;
-import jdk.jshell.SnippetEvent;
 import net.dv8tion.jda.core.EmbedBuilder;
 import net.dv8tion.jda.core.MessageBuilder;
 import net.dv8tion.jda.core.entities.MessageChannel;
 import net.dv8tion.jda.core.entities.User;
 import net.dv8tion.jda.core.events.message.MessageReceivedEvent;
 import net.dv8tion.jda.core.hooks.ListenerAdapter;
-import org.togetherjava.discord.server.execution.AllottedTimeExceededException;
-import org.togetherjava.discord.server.execution.JShellSessionManager;
-import org.togetherjava.discord.server.execution.JShellWrapper;
+import org.togetherjava.discord.server.execution.CodeRunner;
 import org.togetherjava.discord.server.io.input.InputSanitizerManager;
+import org.togetherjava.discord.server.model.ExecutionResult;
 import org.togetherjava.discord.server.rendering.RendererManager;
 
 public class CommandHandler extends ListenerAdapter {
@@ -24,7 +20,7 @@ public class CommandHandler extends ListenerAdapter {
   private static final Pattern CODE_BLOCK_EXTRACTOR_PATTERN = Pattern
       .compile("```(java)?\\s*([\\w\\W]+)```");
 
-  private JShellSessionManager jShellSessionManager;
+  private CodeRunner codeRunner;
   private final String botPrefix;
   private RendererManager rendererManager;
   private boolean autoDeleteMessages;
@@ -32,8 +28,8 @@ public class CommandHandler extends ListenerAdapter {
   private InputSanitizerManager inputSanitizerManager;
 
   @SuppressWarnings("WeakerAccess")
-  public CommandHandler(Config config) {
-    this.jShellSessionManager = new JShellSessionManager(config);
+  public CommandHandler(Config config, CodeRunner codeRunner) {
+    this.codeRunner = codeRunner;
     this.botPrefix = config.getString("prefix");
     this.rendererManager = new RendererManager();
     this.autoDeleteMessages = config.getBoolean("messages.auto_delete");
@@ -47,11 +43,8 @@ public class CommandHandler extends ListenerAdapter {
 
     if (message.startsWith(botPrefix)) {
       String command = parseCommandFromMessage(message);
-      String authorID = event.getAuthor().getId();
 
-      JShellWrapper shell = jShellSessionManager.getSessionOrCreate(authorID);
-
-      executeCommand(event.getAuthor(), shell, command, event.getTextChannel());
+      executeCommand(event.getAuthor(), command, event.getTextChannel());
     }
   }
 
@@ -67,28 +60,16 @@ public class CommandHandler extends ListenerAdapter {
     return inputSanitizerManager.sanitize(withoutPrefix);
   }
 
-  private void executeCommand(User user, JShellWrapper shell, String command,
-      MessageChannel channel) {
+  private void executeCommand(User user, String command, MessageChannel channel) {
     MessageBuilder messageBuilder = new MessageBuilder();
-    EmbedBuilder embedBuilder;
+    EmbedBuilder embedBuilder = buildCommonEmbed(user);
 
     try {
-      JShellWrapper.JShellResult result = shell.eval(command);
-      SnippetEvent snippetEvent = result.getEvents().get(0);
+      ExecutionResult result = codeRunner.runCode(command, user);
 
-      embedBuilder = buildCommonEmbed(user, snippetEvent.snippet());
-
-      rendererManager.renderJShellResult(embedBuilder, result);
-
-      Iterable<Diag> diagonstics = shell.getSnippetDiagnostics(snippetEvent.snippet())::iterator;
-      for (Diag diag : diagonstics) {
-        rendererManager.renderObject(embedBuilder, diag);
-      }
-
-    } catch (UnsupportedOperationException | AllottedTimeExceededException e) {
-      embedBuilder = buildCommonEmbed(user, null);
+      rendererManager.renderResult(embedBuilder, result);
+    } catch (Exception e) {
       rendererManager.renderObject(embedBuilder, e);
-      messageBuilder.setEmbed(embedBuilder.build());
     }
 
     messageBuilder.setEmbed(embedBuilder.build());
@@ -99,14 +80,8 @@ public class CommandHandler extends ListenerAdapter {
     });
   }
 
-  private EmbedBuilder buildCommonEmbed(User user, Snippet snippet) {
-    EmbedBuilder embedBuilder = new EmbedBuilder()
+  private EmbedBuilder buildCommonEmbed(User user) {
+    return new EmbedBuilder()
         .setTitle(user.getName() + "'s Result");
-
-    if (snippet != null) {
-      embedBuilder.addField("Snippet-ID", "$" + snippet.id(), true);
-    }
-
-    return embedBuilder;
   }
 }

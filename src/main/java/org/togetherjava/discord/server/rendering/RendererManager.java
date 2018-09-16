@@ -2,9 +2,10 @@ package org.togetherjava.discord.server.rendering;
 
 import java.util.ArrayList;
 import java.util.List;
-import jdk.jshell.SnippetEvent;
 import net.dv8tion.jda.core.EmbedBuilder;
-import org.togetherjava.discord.server.execution.JShellWrapper;
+import org.togetherjava.discord.server.java.rendering.CompilationErrorRenderer;
+import org.togetherjava.discord.server.model.ExecutionResult;
+import org.togetherjava.discord.server.model.ExecutionResult.Part;
 
 public class RendererManager {
 
@@ -15,10 +16,12 @@ public class RendererManager {
     this.rendererList = new ArrayList<>();
     this.catchAll = new StringCatchallRenderer();
 
+    addRenderer(new CompilationErrorRenderer());
+
     addRenderer(new ExceptionRenderer());
     addRenderer(new StandardOutputRenderer());
-    addRenderer(new CompilationErrorRenderer());
     addRenderer(new RejectedColorRenderer());
+    addRenderer(new ResultIdRenderer());
   }
 
   /**
@@ -34,17 +37,18 @@ public class RendererManager {
    * Renders a given result to the passed {@link EmbedBuilder}.
    *
    * @param builder the builder to render to
-   * @param result the {@link org.togetherjava.discord.server.execution.JShellWrapper.JShellResult}
-   * to render
+   * @param result the {@link ExecutionResult} to render
    */
-  public void renderJShellResult(EmbedBuilder builder, JShellWrapper.JShellResult result) {
+  public void renderResult(EmbedBuilder builder, ExecutionResult result) {
     RenderUtils.applySuccessColor(builder);
 
     renderObject(builder, result);
 
-    for (SnippetEvent snippetEvent : result.getEvents()) {
-      renderObject(builder, snippetEvent.exception());
-      renderObject(builder, snippetEvent.value());
+    for (Part part : result.getParts()) {
+      part.getException()
+          .ifPresent(e -> renderObject(builder, e));
+
+      renderObject(builder, part.getValue());
     }
   }
 
@@ -63,12 +67,19 @@ public class RendererManager {
     for (Renderer renderer : rendererList) {
       if (renderer.isApplicable(object)) {
         rendered = true;
-        renderer.render(object, builder);
+        // unchecked, but isApplicable should take care of it
+        renderUnchecked(renderer, builder, object);
       }
     }
 
     if (!rendered && catchAll.isApplicable(object)) {
-      catchAll.render(object, builder);
+      // unchecked, but isApplicable should take care of it
+      renderUnchecked(catchAll, builder, object);
     }
+  }
+
+  @SuppressWarnings("unchecked")
+  private void renderUnchecked(Renderer renderer, EmbedBuilder embedBuilder, Object object) {
+    renderer.render(object, embedBuilder);
   }
 }

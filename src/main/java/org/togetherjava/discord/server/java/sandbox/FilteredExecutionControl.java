@@ -1,4 +1,4 @@
-package org.togetherjava.discord.server.sandbox;
+package org.togetherjava.discord.server.java.sandbox;
 
 import java.util.ArrayList;
 import java.util.Collection;

@@ -1,19 +1,24 @@
-package org.togetherjava.discord.server.execution;
+package org.togetherjava.discord.server.java.execution;
 
-import jdk.jshell.Diag;
-import jdk.jshell.SnippetEvent;
-import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.Test;
-import org.togetherjava.discord.server.Config;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.time.Duration;
 import java.util.List;
 import java.util.Properties;
 import java.util.concurrent.Executors;
 import java.util.stream.Collectors;
-
-import static org.junit.jupiter.api.Assertions.*;
+import jdk.jshell.Diag;
+import jdk.jshell.SnippetEvent;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
+import org.togetherjava.discord.server.Config;
+import org.togetherjava.discord.server.execution.TimeWatchdog;
+import org.togetherjava.discord.server.java.model.JShellResult;
 
 class JShellWrapperTest {
 
@@ -38,7 +43,7 @@ class JShellWrapperTest {
 
     @Test
     void reportsCompileTimeError() {
-        JShellWrapper.JShellResult result = wrapper.eval("crazy stuff");
+      JShellResult result = wrapper.eval("crazy stuff");
 
         assertFalse(result.getEvents().isEmpty(), "Found no events");
 
@@ -51,7 +56,7 @@ class JShellWrapperTest {
 
     @Test
     void correctlyComputesExpression() {
-        JShellWrapper.JShellResult result = wrapper.eval("1+1");
+      JShellResult result = wrapper.eval("1+1");
 
         assertEquals(result.getEvents().size(), 1, "Event count is not 1");
 
@@ -65,7 +70,7 @@ class JShellWrapperTest {
     @Test
     void savesHistory() {
         wrapper.eval("int test = 1+1;");
-        JShellWrapper.JShellResult result = wrapper.eval("test");
+      JShellResult result = wrapper.eval("test");
 
         assertEquals(result.getEvents().size(), 1, "Event count is not 1");
 

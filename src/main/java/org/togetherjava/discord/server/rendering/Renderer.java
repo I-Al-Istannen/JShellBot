@@ -2,7 +2,7 @@ package org.togetherjava.discord.server.rendering;
 
 import net.dv8tion.jda.core.EmbedBuilder;
 
-public interface Renderer {
+public interface Renderer<T> {
 
   /**
    * Checks if this renderer can render the given object.
@@ -19,5 +19,5 @@ public interface Renderer {
    * @param builder the {@link EmbedBuilder} to modify
    * @return the rendered {@link EmbedBuilder}
    */
-  EmbedBuilder render(Object object, EmbedBuilder builder);
+  EmbedBuilder render(T object, EmbedBuilder builder);
 }

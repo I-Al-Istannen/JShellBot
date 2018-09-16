@@ -1,11 +1,13 @@
-package org.togetherjava.discord.server.rendering;
+package org.togetherjava.discord.server.java.rendering;
 
 import java.util.Locale;
 import jdk.jshell.Diag;
 import net.dv8tion.jda.core.EmbedBuilder;
 import net.dv8tion.jda.core.entities.MessageEmbed;
+import org.togetherjava.discord.server.rendering.RenderUtils;
+import org.togetherjava.discord.server.rendering.Renderer;
 
-public class CompilationErrorRenderer implements Renderer {
+public class CompilationErrorRenderer implements Renderer<Diag> {
 
   @Override
   public boolean isApplicable(Object param) {
@@ -13,8 +15,7 @@ public class CompilationErrorRenderer implements Renderer {
   }
 
   @Override
-  public EmbedBuilder render(Object object, EmbedBuilder builder) {
-    Diag diag = (Diag) object;
+  public EmbedBuilder render(Diag diag, EmbedBuilder builder) {
     return builder
         .addField(
             "Error message",

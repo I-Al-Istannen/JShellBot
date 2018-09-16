@@ -1,17 +1,16 @@
-package org.togetherjava.discord.server.sandbox;
+package org.togetherjava.discord.server.java.sandbox;
 
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
+import java.util.Collection;
+import java.util.List;
+import java.util.Map;
 import jdk.jshell.JShell;
 import jdk.jshell.SnippetEvent;
 import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.apache.commons.lang3.tuple.Pair;
 import org.junit.jupiter.api.Test;
-
-import java.util.Collection;
-import java.util.List;
-import java.util.Map;
-
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class FilteredExecutionControlTest {
 

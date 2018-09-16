@@ -1,4 +1,4 @@
-package org.togetherjava.discord.server.sandbox;
+package org.togetherjava.discord.server.java.sandbox;
 
 import java.lang.instrument.ClassFileTransformer;
 import java.lang.instrument.Instrumentation;

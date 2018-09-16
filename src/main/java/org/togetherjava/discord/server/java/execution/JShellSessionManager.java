@@ -1,46 +1,40 @@
-package org.togetherjava.discord.server.execution;
+package org.togetherjava.discord.server.java.execution;
 
 import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledExecutorService;
 import java.util.function.Supplier;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.togetherjava.discord.server.Config;
+import org.togetherjava.discord.server.execution.TimeWatchdog;
 
-public class JShellSessionManager {
+class JShellSessionManager {
 
   private static final Logger LOGGER = LoggerFactory.getLogger(JShellSessionManager.class);
 
   private ConcurrentHashMap<String, SessionEntry> sessionMap;
   private Duration timeToLive;
-  private Duration maximumComputationTime;
-  private ScheduledExecutorService watchdogExecutorService;
   private Config config;
-
   private Thread ticker;
   private Supplier<LocalDateTime> timeProvider;
+  private Supplier<TimeWatchdog> watchdogSupplier;
 
   /**
    * Creates a new {@link JShellSessionManager} with the specified values.
    *
    * @param config the config to use for creating the {@link JShellWrapper}s
+   * @param watchdogSupplier the supplier to get {@link TimeWatchdog}s from
    */
-  public JShellSessionManager(Config config) {
+  JShellSessionManager(Config config, Supplier<TimeWatchdog> watchdogSupplier) {
     this.config = config;
-    this.watchdogExecutorService = Executors.newSingleThreadScheduledExecutor();
     this.timeProvider = LocalDateTime::now;
-
+    this.watchdogSupplier = watchdogSupplier;
     this.sessionMap = new ConcurrentHashMap<>();
 
     this.timeToLive = Objects.requireNonNull(
         config.getDuration("session.ttl"), "'session.ttl' not set"
-    );
-    this.maximumComputationTime = Objects.requireNonNull(
-        config.getDuration("computation.allotted_time"), "'computation.allotted_time' not set"
     );
 
     this.ticker = new Thread(() -> {
@@ -66,17 +60,13 @@ public class JShellSessionManager {
    * @return the {@link JShellWrapper} to use
    * @throws IllegalStateException if this manager was already shutdown via {@link #shutdown()}
    */
-  public JShellWrapper getSessionOrCreate(String userId) {
+  JShellWrapper getSessionOrCreate(String userId) {
     if (ticker == null) {
       throw new IllegalStateException("This manager was shutdown already.");
     }
     SessionEntry sessionEntry = sessionMap.computeIfAbsent(
         userId,
-        id -> new SessionEntry(
-            new JShellWrapper(config,
-                new TimeWatchdog(watchdogExecutorService, maximumComputationTime)),
-            id
-        )
+        id -> new SessionEntry(new JShellWrapper(config, watchdogSupplier.get()), id)
     );
 
     return sessionEntry.getJShell();
@@ -88,8 +78,7 @@ public class JShellSessionManager {
    * <p>
    * Should be called when the system is shut down.
    */
-  public void shutdown() {
-    // FIXME: 11.04.18 Actually call this to release resources when the bot shuts down
+  void shutdown() {
     ticker.interrupt();
     ticker = null;
     sessionMap.values().forEach(sessionEntry -> sessionEntry.getJShell().close());

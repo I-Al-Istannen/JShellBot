@@ -1,4 +1,4 @@
-package org.togetherjava.discord.server.sandbox;
+package org.togetherjava.discord.server.java.sandbox;
 
 import java.nio.file.Path;
 import me.ialistannen.jvmagentutils.instrumentation.JvmUtils;

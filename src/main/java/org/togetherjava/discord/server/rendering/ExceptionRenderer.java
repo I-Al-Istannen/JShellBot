@@ -3,7 +3,7 @@ package org.togetherjava.discord.server.rendering;
 import jdk.jshell.EvalException;
 import net.dv8tion.jda.core.EmbedBuilder;
 
-public class ExceptionRenderer implements Renderer {
+public class ExceptionRenderer implements Renderer<Throwable> {
 
   @Override
   public boolean isApplicable(Object param) {
@@ -11,10 +11,9 @@ public class ExceptionRenderer implements Renderer {
   }
 
   @Override
-  public EmbedBuilder render(Object object, EmbedBuilder builder) {
+  public EmbedBuilder render(Throwable throwable, EmbedBuilder builder) {
     RenderUtils.applyFailColor(builder);
 
-    Throwable throwable = (Throwable) object;
     builder
         .addField("Exception type", throwable.getClass().getSimpleName(), true)
         .addField("Message", throwable.getMessage(), false);

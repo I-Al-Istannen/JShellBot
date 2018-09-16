@@ -1,9 +1,8 @@
-package org.togetherjava.discord.server.execution;
+package org.togetherjava.discord.server.java.execution;
 
 import java.io.OutputStream;
 import java.io.PrintStream;
 import java.nio.charset.StandardCharsets;
-import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -14,17 +13,19 @@ import jdk.jshell.Snippet;
 import jdk.jshell.SnippetEvent;
 import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.togetherjava.discord.server.Config;
+import org.togetherjava.discord.server.execution.TimeWatchdog;
 import org.togetherjava.discord.server.io.StringOutputStream;
-import org.togetherjava.discord.server.sandbox.AgentAttacher;
-import org.togetherjava.discord.server.sandbox.FilteredExecutionControlProvider;
+import org.togetherjava.discord.server.java.model.JShellResult;
+import org.togetherjava.discord.server.java.sandbox.AgentAttacher;
+import org.togetherjava.discord.server.java.sandbox.FilteredExecutionControlProvider;
 
-public class JShellWrapper {
+class JShellWrapper {
 
   private JShell jShell;
   private StringOutputStream outputStream;
   private TimeWatchdog watchdog;
 
-  public JShellWrapper(Config config, TimeWatchdog watchdog) {
+  JShellWrapper(Config config, TimeWatchdog watchdog) {
     this.watchdog = watchdog;
     this.outputStream = new StringOutputStream(Character.BYTES * 1600);
     this.jShell = buildJShell(outputStream, config);
@@ -62,7 +63,7 @@ public class JShellWrapper {
    *
    * @see JShell#close()
    */
-  public void close() {
+  void close() {
     jShell.close();
   }
 
@@ -74,11 +75,14 @@ public class JShellWrapper {
    * @param command the command to run
    * @return the result of running it
    */
-  public JShellResult eval(String command) {
+  JShellResult eval(String command) {
     try {
-      List<SnippetEvent> evaluate = watchdog.runWatched(() -> evaluate(command), jShell::stop);
+      List<SnippetEvent> result = watchdog.runWatched(() -> evaluate(command), jShell::stop);
+      List<Diag> diagnostics = result.stream()
+          .flatMap(snippetEvent -> getSnippetDiagnostics(snippetEvent.snippet()))
+          .collect(Collectors.toList());
 
-      return new JShellResult(evaluate, getStandardOut());
+      return new JShellResult(result, diagnostics, getStandardOut());
     } finally {
       // always remove the output stream so it does not linger in case of an exception
       outputStream.reset();
@@ -91,7 +95,7 @@ public class JShellWrapper {
    * @param snippet the snippet to return them for
    * @return all found diagnostics
    */
-  public Stream<Diag> getSnippetDiagnostics(Snippet snippet) {
+  Stream<Diag> getSnippetDiagnostics(Snippet snippet) {
     return jShell.diagnostics(snippet);
   }
 
@@ -103,25 +107,4 @@ public class JShellWrapper {
     return outputStream.toString();
   }
 
-  /**
-   * Wraps the result of executing JShell.
-   */
-  public static class JShellResult {
-
-    private List<SnippetEvent> events;
-    private String stdout;
-
-    JShellResult(List<SnippetEvent> events, String stdout) {
-      this.events = events;
-      this.stdout = stdout == null ? "" : stdout;
-    }
-
-    public List<SnippetEvent> getEvents() {
-      return Collections.unmodifiableList(events);
-    }
-
-    public String getStdOut() {
-      return stdout;
-    }
-  }
 }

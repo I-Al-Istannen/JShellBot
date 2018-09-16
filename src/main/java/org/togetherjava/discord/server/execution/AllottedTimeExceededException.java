@@ -6,7 +6,7 @@ import org.apache.commons.lang3.time.DurationFormatUtils;
 /**
  * Indicates the the time you were allowed to use was exceeded.
  */
-public class AllottedTimeExceededException extends RuntimeException {
+public class AllottedTimeExceededException extends ExecutionException {
 
   public AllottedTimeExceededException(Duration maxTime) {
     super(

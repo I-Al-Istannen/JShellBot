@@ -4,7 +4,7 @@ package org.togetherjava.discord.server.rendering;
 import java.awt.Color;
 import net.dv8tion.jda.core.EmbedBuilder;
 
-class RenderUtils {
+public class RenderUtils {
 
   static int NEWLINE_MAXIMUM = 10;
 
@@ -18,7 +18,7 @@ class RenderUtils {
    * @param maxLength the maximum length it can have
    * @return the processed string
    */
-  static String truncateAndSanitize(String input, int maxLength) {
+  public static String truncateAndSanitize(String input, int maxLength) {
     StringBuilder result = new StringBuilder();
 
     int newLineCount = 0;
@@ -44,11 +44,11 @@ class RenderUtils {
     return input.substring(0, maxLength);
   }
 
-  static void applyFailColor(EmbedBuilder builder) {
+  public static void applyFailColor(EmbedBuilder builder) {
     builder.setColor(ERROR_COLOR);
   }
 
-  static void applySuccessColor(EmbedBuilder builder) {
+  public static void applySuccessColor(EmbedBuilder builder) {
     builder.setColor(SUCCESS_COLOR);
   }
 }
