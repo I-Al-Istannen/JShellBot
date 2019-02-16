@@ -19,8 +19,8 @@ public class Config {
   /**
    * Reads the default config and populates this object with it
    *
-   * @param configPath the path to the config to read. Null or a non-existent path to only use the
-   * defaults
+   * @param configPath the path to the config to read. Null or a non-existent path to only use
+   *     the defaults
    * @throws IOException if an error occurs reading the config
    */
   public Config(Path configPath) throws IOException {
@@ -102,5 +102,17 @@ public class Config {
   public Boolean getBoolean(String key) {
     String string = getString(key);
     return string == null ? null : Boolean.parseBoolean(string);
+  }
+
+  /**
+   * Reds an integer from the config.
+   *
+   * @param key the key
+   * @param defaultValue the default value
+   * @return the read integer
+   */
+  public int getInteger(String key, int defaultValue) {
+    String string = getString(key);
+    return string == null ? defaultValue : Integer.parseInt(string);
   }
 }

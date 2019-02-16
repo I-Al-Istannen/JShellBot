@@ -23,10 +23,12 @@ public class JShellWrapper {
   private JShell jShell;
   private StringOutputStream outputStream;
   private TimeWatchdog watchdog;
+  private int maxHeapSize;
 
   public JShellWrapper(Config config, TimeWatchdog watchdog) {
     this.watchdog = watchdog;
     this.outputStream = new StringOutputStream(Character.BYTES * 1600);
+    this.maxHeapSize = config.getInteger("session.max_heap_space_megs", 20);
 
     this.jShell = buildJShell(outputStream, config);
 
@@ -42,7 +44,8 @@ public class JShellWrapper {
         .remoteVMOptions(
             AgentAttacher.getCommandLineArgument(),
             "-Djava.security.policy=="
-                + getClass().getResource("/jshell.policy").toExternalForm()
+                + getClass().getResource("/jshell.policy").toExternalForm(),
+            "-Xmx" + maxHeapSize + "M"
         )
         .executionEngine(getExecutionControlProvider(config), Map.of())
         .build();
